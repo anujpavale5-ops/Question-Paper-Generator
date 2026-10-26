@@ -1,0 +1,27 @@
+# Question Paper Generator — Dependencies
+# Python 3.12+ compatible
+
+# Web framework
+flask==3.1.3
+flask-cors==5.0.1
+python-dotenv==1.0.1
+
+# PDF processing
+pymupdf==1.28.2
+pdfplumber==0.11.10
+
+# DOCX processing
+python-docx==1.2.0
+
+# Image & Local OCR processing
+pillow==12.3.0
+opencv-python>=4.8.0
+rapidocr-onnxruntime==1.2.3
+onnxruntime==1.31.0
+
+# HTML parsing
+beautifulsoup4>=4.12.0
+
+# Utilities
+werkzeug==3.1.3
+python-magic-bin==0.4.14; sys_platform == "win32"

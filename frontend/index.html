@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Question Paper Generator — Document Processing</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- ═══════════════════════════ HEADER ═══════════════════════════ -->
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="logo-area">
+        <div>
+          <h1 class="app-title">Question Paper Generator</h1>
+        </div>
+      </div>
+      </div>
+    </div>
+    <nav class="main-nav">
+        <button id="nav-banks" class="nav-btn">My Question Banks</button>
+        <button id="nav-extraction" class="nav-btn active">Document Processing</button>
+        <button id="nav-blueprint" class="nav-btn">Blueprint & Generation</button>
+        <button id="nav-paper" class="nav-btn">Generated Paper</button>
+    </nav>
+  </header>
+
+  <!-- ═══════════════════════════ MY QUESTION BANKS VIEW ════════════════════════ -->
+  <main id="view-banks" class="app-main view-section hidden">
+    <div class="banks-page-header">
+      <div>
+        <h2 class="section-title">My Question Banks</h2>
+        <p class="section-desc">Search, reopen, review, and manage your saved question collections.</p>
+      </div>
+      <div class="banks-header-actions">
+        <button id="btn-goto-upload" class="btn btn-primary">+ Upload New Document</button>
+      </div>
+    </div>
+
+    <!-- Overview Metrics Bar -->
+    <div class="banks-stats-bar card">
+      <div class="stat-item">
+        <span class="stat-number" id="statsTotalBanks">0</span>
+        <span class="stat-label">Saved Question Banks</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <span class="stat-number" id="statsTotalQuestions">0</span>
+        <span class="stat-label">Total Extracted Questions</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <span class="stat-number" id="statsTotalPapers">0</span>
+        <span class="stat-label">Generated Papers</span>
+      </div>
+    </div>
+
+    <!-- Search & Filter Controls -->
+    <div class="banks-toolbar card">
+      <div class="banks-search-box">
+        <input type="text" id="bankSearchInput" class="bank-search-input" placeholder="Search by bank name, filename, topic..." />
+        <button id="bankSearchClear" class="btn-clear hidden" title="Clear search">&times;</button>
+      </div>
+      <div class="banks-filters-group">
+        <div class="bank-filter-tabs">
+          <button class="bank-filter-btn active" data-filter="all">All</button>
+          <button class="bank-filter-btn" data-filter="ready">Ready</button>
+          <button class="bank-filter-btn" data-filter="needs_review">Needs Review</button>
+        </div>
+        <div class="banks-sort-group">
+          <label for="bankSortSelect" class="sort-label">Sort:</label>
+          <select id="bankSortSelect" class="bank-sort-select">
+            <option value="recent">Last Modified</option>
+            <option value="name">Name (A-Z)</option>
+            <option value="questions">Questions (High to Low)</option>
+            <option value="papers">Papers Count</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Banks Grid -->
+    <div id="banksGrid" class="banks-grid"></div>
+
+    <!-- Loading State -->
+    <div id="banksLoading" class="banks-loading hidden">
+      <span class="spinner"></span>
+      <p>Loading question banks...</p>
+    </div>
+
+    <!-- Empty State -->
+    <div id="banksEmptyState" class="card empty-state hidden">
+      <div class="empty-state-icon">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+        </svg>
+      </div>
+      <h3 id="emptyStateTitle">No Question Banks Found</h3>
+      <p id="emptyStateMsg">Upload a PDF or DOCX file to extract and create your first question bank.</p>
+      <button id="btnEmptyUpload" class="btn btn-primary" style="margin-top:1rem;">Upload Document</button>
+    </div>
+  </main>
+
+  <!-- ═══════════════════════════ MAIN ════════════════════════════ -->
+  <main id="view-extraction" class="app-main view-section active">
+
+    <!-- ── Upload panel ─────────────────────────────────────────── -->
+    <section class="upload-panel card" aria-label="Upload document">
+      <h2 class="section-title">Upload Document</h2>
+      <p class="section-desc">
+        Upload a <strong>PDF</strong> or <strong>DOCX</strong> file to extract its content.
+        Maximum file size: 50 MB.
+      </p>
+
+      <div id="dropZone" class="drop-zone" role="button" tabindex="0"
+           aria-label="Click or drag and drop a PDF or DOCX file here">
+        <div class="drop-zone-icon" aria-hidden="true">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17 8 12 3 7 8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+          </svg>
+        </div>
+        <p class="drop-zone-primary">Drag &amp; drop your file here</p>
+        <p class="drop-zone-secondary">or</p>
+        <label class="btn btn-outline" for="fileInput">Browse files</label>
+        <input type="file" id="fileInput" accept=".pdf,.docx" class="visually-hidden"
+               aria-label="Choose a PDF or DOCX file" />
+      </div>
+
+      <!-- File info -->
+      <div id="fileInfo" class="file-info hidden" aria-live="polite">
+        <div class="file-info-icon" id="fileTypeIcon">DOC</div>
+        <div class="file-info-details">
+          <p class="file-info-name" id="fileName">—</p>
+          <p class="file-info-size" id="fileSize">—</p>
+        </div>
+        <button class="btn-icon" id="clearFile" aria-label="Remove file" title="Remove file">&times;</button>
+      </div>
+
+      <!-- Error display -->
+      <div id="uploadError" class="alert alert-error hidden" role="alert" aria-live="assertive">
+        <div id="uploadErrorMsg"></div>
+      </div>
+
+      <!-- Process button -->
+      <div class="upload-actions">
+        <button id="processBtn" class="btn btn-primary" disabled aria-disabled="true">
+          <span id="processBtnText">Process Document</span>
+          <span id="processBtnSpinner" class="spinner hidden" aria-hidden="true"></span>
+        </button>
+      </div>
+
+      <!-- Progress -->
+      <div id="progressArea" class="progress-area hidden" aria-live="polite">
+        <div class="progress-bar-track">
+          <div class="progress-bar-fill" id="progressFill"></div>
+        </div>
+        <p class="progress-label" id="progressLabel">Uploading…</p>
+      </div>
+    </section>
+
+    <!-- ── Results panel ─────────────────────────────────────────── -->
+    <section id="resultsPanel" class="results-panel hidden" aria-label="Extraction results">
+
+      <!-- Summary bar -->
+      <div class="summary-bar card">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.75rem;">
+          <h2 class="section-title" id="resultTitle" style="margin:0;">Extraction Results</h2>
+        </div>
+        <div class="summary-stats" id="summaryStats">
+          <!-- Filled by JS -->
+        </div>
+        <div id="summaryWarnings" class="summary-warnings hidden"></div>
+        <div class="summary-actions">
+          <button class="btn btn-outline btn-sm" id="backBtn">Process Another File</button>
+          <button class="btn btn-outline btn-sm" id="toggleJsonBtn">Show JSON</button>
+        </div>
+      </div>
+
+      <!-- Raw JSON panel -->
+      <div id="jsonPanel" class="json-panel card hidden">
+        <pre id="jsonOutput" class="json-output"></pre>
+      </div>
+
+      <!-- Question segmentation summary -->
+      <div id="segmentationPanel" class="card hidden">
+        <h3 class="section-title">Extracted Questions</h3>
+        <p class="section-desc">
+          Review the questions below. Check the ones you want to keep.
+        </p>
+        <div class="import-controls" style="margin-bottom:1rem;">
+            <button id="btn-import-questions" class="btn primary">Confirm & Proceed to Blueprint</button>
+            <button id="btn-cancel-import" class="btn secondary">Cancel</button>
+        </div>
+        <div id="segmentationContent"></div>
+      </div>
+
+      <!-- Block review -->
+      <div class="blocks-section card">
+        <div class="blocks-header">
+          <h3 class="section-title">Content Blocks</h3>
+          <div class="block-filters" role="group" aria-label="Filter by block type">
+            <button class="filter-btn active" data-filter="all">All</button>
+            <button class="filter-btn" data-filter="text">Text</button>
+            <button class="filter-btn" data-filter="table">Tables</button>
+            <button class="filter-btn" data-filter="image">Images</button>
+            <button class="filter-btn" data-filter="figure">Figures</button>
+            <button class="filter-btn" data-filter="unknown">Unknown</button>
+          </div>
+        </div>
+        <div id="blocksContainer" class="blocks-container">
+          <!-- Filled by JS -->
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+<main id="view-blueprint" class="view-section hidden">
+    <!-- Blueprint Dashboard -->
+    <section id="blueprint-dashboard" class="card">
+    <section class="blueprint-content" style="max-width: 900px; margin: 0 auto; padding: 2rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 2rem;">
+            <h2>Blueprint Configuration</h2>
+            <div>
+                <button id="btn-load-sample" class="btn secondary" style="display:none;">Load Sample Pattern</button>
+                <button id="btn-save-blueprint" class="btn secondary" style="margin-left: 0.5rem;">Save Blueprint</button>
+            </div>
+        </div>
+
+        <p style="margin-bottom: 2rem;"><strong>Active Question Collection:</strong> <span id="active-collection-name">None</span></p>
+        
+        <div class="blueprint-summary-card" style="background: var(--bg-color); padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--primary-color);">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label style="display:inline; margin-right: 1rem; font-weight:bold;">Paper Total:</label>
+                <select id="bp-paper-total" style="padding: 0.5rem; border-radius: 4px; border: 1px solid var(--border-color);">
+                    <option value="30">30 Marks</option>
+                    <option value="60">60 Marks</option>
+                </select>
+            </div>
+            
+            <div style="text-align: right;">
+                <div style="font-size: 1.1rem;">Allocated Marks: <strong id="bp-allocated-marks">0</strong></div>
+                <div id="bp-marks-status" style="font-size: 0.9rem; margin-top: 0.25rem;">Remaining: 30 marks</div>
+            </div>
+        </div>
+
+        <div id="blueprint-validation-area" style="margin-bottom: 2rem;"></div>
+
+        <div id="blueprint-mq-list" style="display: flex; flex-direction: column; gap: 1rem;">
+            <!-- Main questions injected here -->
+        </div>
+
+        <div style="margin-top: 2rem; display: flex; justify-content: space-between;">
+            <button id="btn-add-mq" class="btn secondary">+ Add Main Question</button>
+            <button id="btn-generate-paper" class="btn primary" disabled>Continue to Generate Paper</button>
+        </div>
+    </section>
+</main>
+
+<!-- ═══════════════════════════ PAPER VIEW ══════════════════════════ -->
+<main id="view-paper" class="view-section hidden">
+  <section style="max-width: 900px; margin: 0 auto; padding: 2rem;">
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 2px solid var(--border-color); padding-bottom:1rem; margin-bottom:1.5rem;">
+      <h2>Generated Question Paper</h2>
+      <div>
+        <button id="btn-back-to-blueprint" class="btn secondary">Back to Blueprint</button>
+      </div>
+    </div>
+    <div id="paper-generation-status" style="margin-bottom:1rem;"></div>
+    <div id="paper-warnings" style="margin-bottom:1rem;"></div>
+    <div id="paper-content"></div>
+  </section>
+</main>
+
+  <!-- ═══════════════════════════ FOOTER ══════════════════════════ -->
+  <footer class="app-footer">
+    <p>Question Paper Generator</p>
+  </footer>
+
+  <!-- ═══════════════════════════ TEMPLATES ═══════════════════════ -->
+
+  <!-- Block card template -->
+  <template id="blockCardTemplate">
+    <article class="block-card">
+      <header class="block-card-header">
+        <div class="block-meta">
+          <span class="block-type-badge" data-type=""></span>
+          <span class="block-page">Page <span class="page-num"></span></span>
+          <span class="block-method"></span>
+        </div>
+        <div class="block-status">
+          <span class="validation-badge" data-status=""></span>
+          <button class="btn-icon toggle-block" aria-label="Expand/collapse block" aria-expanded="false">▼</button>
+        </div>
+      </header>
+      <div class="block-card-body">
+        <div class="block-content"></div>
+        <details class="block-notes hidden">
+          <summary>Notes &amp; Warnings</summary>
+          <ul class="notes-list"></ul>
+        </details>
+      </div>
+    </article>
+  </template>
+
+  <!-- ═══════════════════════════ MODALS ═══════════════════════════ -->
+
+  <!-- Duplicate Detection Modal -->
+  <div id="duplicateModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="dupModalTitle">
+    <div class="modal-dialog card">
+      <div class="modal-header">
+        <h3 id="dupModalTitle" class="modal-title">Question Bank Already Exists</h3>
+        <button id="btnDupCloseX" class="modal-close-btn" aria-label="Close modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p id="dupModalDesc" class="modal-desc">
+          An identical question bank was detected for this file.
+        </p>
+
+        <!-- Matched Bank Preview Card -->
+        <div class="dup-preview-card">
+          <div class="dup-preview-title" id="dupBankName">—</div>
+          <div class="dup-preview-meta">
+            <span class="dup-meta-item">File: <strong id="dupBankFilename">—</strong></span>
+            <span class="dup-meta-item">Questions: <strong id="dupBankQuestions">0</strong></span>
+            <span class="dup-meta-item">Units: <strong id="dupBankUnits">0</strong></span>
+            <span class="dup-meta-item">Papers: <strong id="dupBankPapers">0</strong></span>
+          </div>
+          <div class="dup-preview-date">Last Processed: <span id="dupBankDate">—</span></div>
+        </div>
+      </div>
+      <div class="modal-footer dup-actions">
+        <button id="btnDupOpen" class="btn btn-primary">Open Existing Bank</button>
+        <button id="btnDupReprocess" class="btn btn-secondary">Reprocess Existing Bank</button>
+        <button id="btnDupSeparate" class="btn btn-secondary">Import as Separate Bank</button>
+        <button id="btnDupCancel" class="btn btn-outline">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reprocess Confirmation Modal -->
+  <div id="reprocessModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="reprocessModalTitle">
+    <div class="modal-dialog card">
+      <div class="modal-header">
+        <h3 id="reprocessModalTitle" class="modal-title">Reprocess Question Bank</h3>
+        <button id="btnReprocessCloseX" class="modal-close-btn" aria-label="Close modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-desc">
+          Reprocessing will safely re-extract questions from the original source document.
+        </p>
+        <div class="alert alert-info" style="margin:1rem 0; font-size:0.9rem;">
+          <strong>Safe Reprocessing Guarantee:</strong>
+          <ul style="margin: 0.5rem 0 0 1.25rem; font-size:0.85rem; line-height:1.5;">
+            <li>A recoverable snapshot of current questions will be preserved before processing.</li>
+            <li>All existing generated question papers and slot customizations will remain intact.</li>
+            <li>If reprocessing encounters an error, the previous version will be restored automatically.</li>
+          </ul>
+        </div>
+        <div class="dup-preview-card">
+          <div class="dup-preview-title" id="reprocessBankName">—</div>
+          <div class="dup-preview-meta">
+            <span>Questions: <strong id="reprocessBankQuestions">0</strong></span>
+            <span>Units: <strong id="reprocessBankUnits">0</strong></span>
+          </div>
+        </div>
+        <div id="reprocessProgress" class="progress-area hidden" style="margin-top:1rem;">
+          <div class="progress-bar-track"><div class="progress-bar-fill indeterminate"></div></div>
+          <p class="progress-label" id="reprocessProgressLabel">Reprocessing document...</p>
+        </div>
+      </div>
+      <div class="modal-footer" id="reprocessFooter">
+        <button id="btnConfirmReprocess" class="btn btn-primary">Start Reprocessing</button>
+        <button id="btnCancelReprocess" class="btn btn-outline">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div id="deleteModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+    <div class="modal-dialog card">
+      <div class="modal-header">
+        <h3 id="deleteModalTitle" class="modal-title" style="color:var(--error-color);">Delete Question Bank</h3>
+        <button id="btnDeleteCloseX" class="modal-close-btn" aria-label="Close modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-desc">
+          Are you sure you want to permanently delete <strong id="deleteBankName">—</strong>?
+        </p>
+        <p class="modal-desc" style="color:var(--error-color); font-size:0.875rem; margin-top:0.5rem;">
+          This will permanently remove the question bank, all associated questions, blueprints, and generated papers for this bank.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button id="btnConfirmDelete" class="btn btn-danger">Delete Question Bank</button>
+        <button id="btnCancelDelete" class="btn btn-outline">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="appToastContainer" class="toast-container" aria-live="polite"></div>
+
+  <script src="app.js"></script>
+  <script src="blueprint.js"></script>
+  <script src="paper.js"></script>
+  <script src="banks.js"></script>
+</body>
+</html>
